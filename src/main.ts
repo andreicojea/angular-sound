@@ -29,18 +29,25 @@ module AngularSound {
 
 		// @ngInject
 		constructor($window: WebAudioEnabledWindow, $http: ng.IHttpService, $q: ng.IQService) {
+			this.$window = $window;
 			this.$http = $http;
 			this.$q = $q;
 			this.sounds = [];
+		}
 
-			if ($window.AudioContext)
-				this.context = new $window.AudioContext();
-			else if ($window.webkitAudioContext)
-				this.context = new $window.webkitAudioContext();
-			else throw 'browser does not support the web audio api';
+		initialize() {
+			if(!!!this.context){
+				if (this.$window.AudioContext)
+					this.context = new this.$window.AudioContext();
+				else if (this.$window.webkitAudioContext)
+					this.context = new this.$window.webkitAudioContext();
+				else throw 'browser does not support the web audio api';
+			}
 		}
 
 		loadSound(soundInfo: SoundInformation): ng.IPromise<Sound> {
+			this.initialize(); // lazy init
+
 			var deferred = this.$q.defer();
 
 			this.$http.get(soundInfo.src, { responseType: 'arraybuffer' })
@@ -60,6 +67,8 @@ module AngularSound {
 		}
 
 		getSound(name: string): AudioBufferSourceNode {
+			this.initialize(); // lazy init
+
 			for (var i in this.sounds) {
 				if (this.sounds[i].name === name) {
 					return this.getBufferSource(this.sounds[i]);
